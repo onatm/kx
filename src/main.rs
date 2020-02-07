@@ -16,7 +16,14 @@ fn main() {
 
     let kube_config_path = &kube_config_folder_path.join("config");
 
-    let mut kube_config = &mut KubeConfig::load(kube_config_path).unwrap_or_else(|err| {
+    let contents = &fs::read_to_string(kube_config_path).unwrap_or_else(|err| {
+        println!("Cannot read kube config: {}", err);
+        process::exit(1);
+    });
+
+    let contents = contents.lines().collect::<Vec<&str>>();
+
+    let kube_config = &mut KubeConfig::load(contents).unwrap_or_else(|err| {
         println!("Cannot read kube config: {}", err);
         process::exit(1);
     });
@@ -42,15 +49,17 @@ fn main() {
         })
         .get_output_text();
 
-    kube_config.current_context = Some(selected_context.to_string());
+    let new_context = format!("current-context: {}", &selected_context);
 
-    let new_kube_config = serde_yaml::to_string(kube_config).unwrap_or_else(|err| {
-        println!("Cannot serialize to yaml: {}", err);
-        process::exit(1);
-    });
+    kube_config
+        .set_current_context(&new_context)
+        .unwrap_or_else(|err| {
+            println!("Cannot set current-context: {}", err);
+            process::exit(1);
+        });
 
-    fs::write(kube_config_path, new_kube_config).unwrap_or_else(|err| {
-        println!("Cannot set the current context: {}", err);
+    fs::write(kube_config_path, kube_config.get_config()).unwrap_or_else(|err| {
+        println!("Cannot save kubeconfig: {}", err);
         process::exit(1);
     });
 

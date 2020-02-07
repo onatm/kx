@@ -1,126 +1,101 @@
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::cell::RefCell;
 use std::error::Error;
-use std::fs;
-use std::path::PathBuf;
 
-// https://github.com/kubernetes/client-go/blob/master/tools/clientcmd/api/types.go
-// https://github.com/clux/kube-rs/blob/master/src/config/apis.rs
-#[serde(rename_all = "kebab-case")]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct KubeConfig {
-    kind: Option<String>,
-    #[serde(rename = "apiVersion")]
-    api_version: Option<String>,
-    preferences: Option<Preferences>,
-    clusters: Vec<NamedCluster>,
-    users: Vec<NamedUser>,
-    pub contexts: Vec<NamedContext>,
-    pub current_context: Option<String>,
-    extensions: Option<Vec<NamedExtension>>,
+#[derive(Debug)]
+pub struct KubeConfig<'a> {
+    contents: RefCell<Vec<&'a str>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct Preferences {
-    colors: Option<bool>,
-    extensions: Option<Vec<NamedExtension>>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct NamedExtension {
-    name: String,
-    extension: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct NamedCluster {
-    name: String,
-    cluster: Cluster,
-}
-
-#[serde(rename_all = "kebab-case")]
-#[derive(Debug, Serialize, Deserialize)]
-struct Cluster {
-    server: String,
-    insecure_skip_tls_verify: Option<bool>,
-    certificate_authority: Option<String>,
-    certificate_authority_data: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct NamedUser {
-    name: String,
-    user: User,
-}
-
-#[serde(rename_all = "kebab-case")]
-#[derive(Debug, Serialize, Deserialize)]
-pub struct User {
-    pub username: Option<String>,
-    pub password: Option<String>,
-
-    pub token: Option<String>,
-    #[serde(rename = "tokenFile")]
-    pub token_file: Option<String>,
-
-    pub client_certificate: Option<String>,
-    pub client_certificate_data: Option<String>,
-
-    pub client_key: Option<String>,
-    pub client_key_data: Option<String>,
-
-    #[serde(rename = "as")]
-    pub impersonate: Option<String>,
-    #[serde(rename = "as-groups")]
-    pub impersonate_groups: Option<Vec<String>>,
-
-    pub auth_provider: Option<AuthProviderConfig>,
-
-    pub exec: Option<ExecConfig>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AuthProviderConfig {
-    pub name: String,
-    pub config: HashMap<String, String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ExecConfig {
-    #[serde(rename = "apiVersion")]
-    pub api_version: Option<String>,
-    pub args: Option<Vec<String>>,
-    pub command: String,
-    pub env: Option<Vec<HashMap<String, String>>>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct NamedContext {
-    pub name: String,
-    context: Context,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Context {
-    cluster: String,
-    namespace: Option<String>,
-}
-
-impl KubeConfig {
-    pub fn load(path: &PathBuf) -> Result<KubeConfig, Box<dyn Error>> {
-        let kube_config_raw = &fs::read_to_string(path)?;
-
-        let kube_config: KubeConfig = serde_yaml::from_str(kube_config_raw)?;
-
-        Ok(kube_config)
+impl<'a> KubeConfig<'a> {
+    pub fn load(contents: Vec<&'a str>) -> Result<KubeConfig, Box<dyn Error>> {
+        Ok(KubeConfig {
+            contents: RefCell::new(contents),
+        })
     }
 
     pub fn list_contexts(&self) -> String {
-        self.contexts
+        self.get_contexts()
+            .unwrap()
             .iter()
-            .map(|c| &c.name)
-            .cloned()
+            .map(|c| c.to_string())
             .collect::<Vec<String>>()
             .join("\n")
+    }
+
+    pub fn get_config(&self) -> String {
+        self.contents
+            .borrow()
+            .iter()
+            .map(|c| c.to_string())
+            .collect::<Vec<String>>()
+            .join("\n")
+    }
+
+    pub fn set_current_context(&'a self, new_context: &'a str) -> Result<(), &'static str> {
+        let mut index = 0;
+        let mut contents = self.contents.borrow_mut();
+
+        {
+            let mut iter = contents.iter();
+
+            while let Some(line) = iter.next() {
+                if match_literal(line, "current-context: ").is_some() {
+                    break;
+                }
+                index = index + 1;
+            }
+        }
+
+        contents.push(new_context);
+        contents.swap_remove(index);
+
+        Ok(())
+    }
+
+    fn get_contexts(&self) -> Result<Vec<&str>, &'static str> {
+        let mut contexts = Vec::<&str>::new();
+        let contents = self.contents.borrow();
+        let mut input = contents.iter().peekable();
+
+        while let Some(line) = input.next() {
+            if match_literal(line, "contexts:").is_some() {
+                // unwrap
+                while is_in_mapping(input.peek().unwrap()).is_ok() {
+                    if let Some(line) = input.next() {
+                        if let Some(name) = match_literal(line, "  name: ") {
+                            contexts.push(name);
+                        }
+                    }
+                }
+
+                break;
+            }
+        }
+
+        if contexts.len() == 0 {
+            return Err("Cannot get contexts!");
+        }
+
+        Ok(contexts)
+    }
+}
+
+fn match_literal<'a>(input: &'a str, expected: &'static str) -> Option<&'a str> {
+    match input.get(0..expected.len()) {
+        Some(next) if next == expected => Some(&input[expected.len()..]),
+        _ => None,
+    }
+}
+
+fn is_in_mapping(input: &str) -> Result<(), &str> {
+    match &input.chars().next() {
+        Some(first_char) => {
+            return if !first_char.is_alphabetic() {
+                Ok(())
+            } else {
+                Err(input)
+            }
+        }
+        _ => Err(input),
     }
 }
