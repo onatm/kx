@@ -39,7 +39,7 @@ impl<'a> KubeConfig<'a> {
             let mut iter = contents.iter();
 
             while let Some(line) = iter.next() {
-                if match_literal(line, "current-context: ").is_some() {
+                if parser::match_literal(line, "current-context: ").is_some() {
                     break;
                 }
                 index = index + 1;
@@ -58,11 +58,11 @@ impl<'a> KubeConfig<'a> {
         let mut input = contents.iter().peekable();
 
         while let Some(line) = input.next() {
-            if match_literal(line, "contexts:").is_some() {
+            if parser::match_literal(line, "contexts:").is_some() {
                 // unwrap
-                while is_in_mapping(input.peek().unwrap()).is_ok() {
+                while parser::is_in_mapping(input.peek().unwrap()).is_ok() {
                     if let Some(line) = input.next() {
-                        if let Some(name) = match_literal(line, "  name: ") {
+                        if let Some(name) = parser::match_literal(line, "  name: ") {
                             contexts.push(name);
                         }
                     }
@@ -80,22 +80,4 @@ impl<'a> KubeConfig<'a> {
     }
 }
 
-fn match_literal<'a>(input: &'a str, expected: &'static str) -> Option<&'a str> {
-    match input.get(0..expected.len()) {
-        Some(next) if next == expected => Some(&input[expected.len()..]),
-        _ => None,
-    }
-}
-
-fn is_in_mapping(input: &str) -> Result<(), &str> {
-    match &input.chars().next() {
-        Some(first_char) => {
-            return if !first_char.is_alphabetic() {
-                Ok(())
-            } else {
-                Err(input)
-            }
-        }
-        _ => Err(input),
-    }
-}
+mod parser;
