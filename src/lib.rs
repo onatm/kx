@@ -15,15 +15,6 @@ impl<'a> Config<'a> {
         })
     }
 
-    pub fn list_contexts(&self) -> String {
-        self.get_contexts()
-            .unwrap()
-            .iter()
-            .map(|c| c.to_string())
-            .collect::<Vec<String>>()
-            .join("\n")
-    }
-
     pub fn get_config(&self) -> String {
         self.contents
             .borrow()
@@ -33,19 +24,38 @@ impl<'a> Config<'a> {
             .join("\n")
     }
 
+    pub fn list_contexts(&self) -> String {
+        self.get_contexts()
+            .unwrap()
+            .iter()
+            .map(|c| c.to_string())
+            .collect::<Vec<String>>()
+            .join("\n")
+    }
+
+    pub fn get_current_context(&self) -> Result<&str, &'static str> {
+        let contents = self.contents.borrow();
+        let mut iter = contents.iter();
+
+        while let Some(line) = iter.next() {
+            if let Some(current_context) = parser::match_literal(line, "current-context: ") {
+                return Ok(current_context);
+            }
+        }
+
+        Err("current-context is not set")
+    }
+
     pub fn set_current_context(&'a self, new_context: &'a str) -> Result<(), &'static str> {
         let mut index = 0;
         let mut contents = self.contents.borrow_mut();
+        let mut iter = contents.iter();
 
-        {
-            let mut iter = contents.iter();
-
-            while let Some(line) = iter.next() {
-                if parser::match_literal(line, "current-context: ").is_some() {
-                    break;
-                }
-                index = index + 1;
+        while let Some(line) = iter.next() {
+            if parser::match_literal(line, "current-context: ").is_some() {
+                break;
             }
+            index = index + 1;
         }
 
         contents.push(new_context);

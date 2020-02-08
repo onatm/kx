@@ -48,7 +48,12 @@ fn main() {
     }
 
     if matches.is_present("current") {
-        println!("show current context");
+        let current_context = kube_config.get_current_context().unwrap_or_else(|err| {
+            println!("error: {}", err);
+            process::exit(1);
+        });
+
+        println!("{}", current_context);
     }
 
     let contexts = kube_config.list_contexts();
