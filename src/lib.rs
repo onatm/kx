@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::error::Error;
 
 mod parser;
 
@@ -9,10 +8,10 @@ pub struct Config<'a> {
 }
 
 impl<'a> Config<'a> {
-    pub fn load(contents: Vec<&'a str>) -> Result<Config, Box<dyn Error>> {
-        Ok(Config {
+    pub fn load(contents: Vec<&'a str>) -> Config {
+        Config {
             contents: RefCell::new(contents),
-        })
+        }
     }
 
     pub fn get_config(&self) -> String {

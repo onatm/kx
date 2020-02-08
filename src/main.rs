@@ -23,40 +23,35 @@ fn main() {
         .get_matches();
 
     let home_dir = dirs::home_dir().unwrap_or_else(|| {
-        println!("Cannot find HOME directory");
+        eprintln!("error: cannot find HOME directory");
         process::exit(1);
     });
 
-    let kube_config_folder_path = &home_dir.join(".kube");
+    let config_path = &home_dir.join(".kube").join("config");
 
-    let kube_config_path = &kube_config_folder_path.join("config");
-
-    let contents = &fs::read_to_string(kube_config_path).unwrap_or_else(|err| {
-        println!("Cannot read kube config: {}", err);
+    let contents = &fs::read_to_string(config_path).unwrap_or_else(|_| {
+        eprintln!("error: cannot read kube config");
         process::exit(1);
     });
 
     let contents = contents.lines().collect::<Vec<&str>>();
 
-    let kube_config = &mut Config::load(contents).unwrap_or_else(|err| {
-        println!("Cannot read kube config: {}", err);
-        process::exit(1);
-    });
+    let config = &mut Config::load(contents);
 
     if let Some(new_context) = matches.value_of("NAME") {
         println!("new context {}", new_context);
     }
 
     if matches.is_present("current") {
-        let current_context = kube_config.get_current_context().unwrap_or_else(|err| {
-            println!("error: {}", err);
+        let current_context = config.get_current_context().unwrap_or_else(|err| {
+            eprintln!("error: {}", err);
             process::exit(1);
         });
 
         println!("{}", current_context);
     }
 
-    let contexts = kube_config.list_contexts();
+    let contexts = config.list_contexts();
 
     let options = SkimOptionsBuilder::default()
         .height(Some("100%"))
@@ -72,22 +67,22 @@ fn main() {
         .iter()
         .next()
         .unwrap_or_else(|| {
-            println!("Context not selected");
+            println!("context is not changed");
             process::exit(1);
         })
         .get_output_text();
 
     let new_context = format!("current-context: {}", &selected_context);
 
-    kube_config
+    config
         .set_current_context(&new_context)
-        .unwrap_or_else(|err| {
-            println!("Cannot set current-context: {}", err);
+        .unwrap_or_else(|_| {
+            eprintln!("error: cannot set current-context");
             process::exit(1);
         });
 
-    fs::write(kube_config_path, kube_config.get_config()).unwrap_or_else(|err| {
-        println!("Cannot save kubeconfig: {}", err);
+    fs::write(config_path, config.get_config()).unwrap_or_else(|_| {
+        eprintln!("error: cannot save kube config");
         process::exit(1);
     });
 
