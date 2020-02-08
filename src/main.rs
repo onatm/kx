@@ -1,5 +1,7 @@
+extern crate clap;
 extern crate dirs;
 
+use clap::{App, Arg};
 use kx::KubeConfig;
 use skim::{Skim, SkimOptionsBuilder};
 use std::fs;
@@ -7,6 +9,19 @@ use std::io::Cursor;
 use std::process;
 
 fn main() {
+    let matches = App::new("kx")
+        .version("1.0")
+        .author("onatm - https://github.com/onatm")
+        .about("Interactively switch between kubernetes contexts without any external dependencies")
+        .arg(Arg::with_name("NAME").help("Switch to context <NAME>"))
+        .arg(
+            Arg::with_name("current")
+                .short("c")
+                .long("current")
+                .help("Show the current context"),
+        )
+        .get_matches();
+
     let home_dir = dirs::home_dir().unwrap_or_else(|| {
         println!("Cannot find HOME directory");
         process::exit(1);
@@ -27,6 +42,14 @@ fn main() {
         println!("Cannot read kube config: {}", err);
         process::exit(1);
     });
+
+    if let Some(new_context) = matches.value_of("NAME") {
+        println!("new context {}", new_context);
+    }
+
+    if matches.is_present("current") {
+        println!("show current context");
+    }
 
     let contexts = kube_config.list_contexts();
 
