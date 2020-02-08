@@ -2,7 +2,7 @@ extern crate clap;
 extern crate dirs;
 
 use clap::{App, Arg};
-use kx::KubeConfig;
+use kx::Config;
 use skim::{Skim, SkimOptionsBuilder};
 use std::fs;
 use std::io::Cursor;
@@ -38,7 +38,7 @@ fn main() {
 
     let contents = contents.lines().collect::<Vec<&str>>();
 
-    let kube_config = &mut KubeConfig::load(contents).unwrap_or_else(|err| {
+    let kube_config = &mut Config::load(contents).unwrap_or_else(|err| {
         println!("Cannot read kube config: {}", err);
         process::exit(1);
     });

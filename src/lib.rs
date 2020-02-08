@@ -1,14 +1,16 @@
 use std::cell::RefCell;
 use std::error::Error;
 
+mod parser;
+
 #[derive(Debug)]
-pub struct KubeConfig<'a> {
+pub struct Config<'a> {
     contents: RefCell<Vec<&'a str>>,
 }
 
-impl<'a> KubeConfig<'a> {
-    pub fn load(contents: Vec<&'a str>) -> Result<KubeConfig, Box<dyn Error>> {
-        Ok(KubeConfig {
+impl<'a> Config<'a> {
+    pub fn load(contents: Vec<&'a str>) -> Result<Config, Box<dyn Error>> {
+        Ok(Config {
             contents: RefCell::new(contents),
         })
     }
@@ -79,5 +81,3 @@ impl<'a> KubeConfig<'a> {
         Ok(contexts)
     }
 }
-
-mod parser;
