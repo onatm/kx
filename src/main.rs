@@ -14,12 +14,12 @@ fn main() {
         .version("1.0")
         .author("onatm - https://github.com/onatm")
         .about("Interactively switch between kubernetes contexts without any external dependencies")
-        .arg(Arg::with_name("NAME").help("Switch to context <NAME>"))
+        .arg(Arg::with_name("NAME").help("Switchs to context <NAME>"))
         .arg(
             Arg::with_name("current")
                 .short("c")
                 .long("current")
-                .help("Show the current context"),
+                .help("Shows the current context"),
         )
         .get_matches();
 
