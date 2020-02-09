@@ -6,6 +6,7 @@ use kx::Config;
 use skim::{Skim, SkimOptionsBuilder};
 use std::fs;
 use std::io::Cursor;
+use std::path::PathBuf;
 use std::process;
 
 fn main() {
@@ -38,10 +39,6 @@ fn main() {
 
     let config = &mut Config::load(contents);
 
-    if let Some(new_context) = matches.value_of("NAME") {
-        println!("new context {}", new_context);
-    }
-
     if matches.is_present("current") {
         let current_context = config.get_current_context().unwrap_or_else(|err| {
             eprintln!("error: {}", err);
@@ -49,6 +46,24 @@ fn main() {
         });
 
         println!("{}", current_context);
+        return;
+    }
+
+    if let Some(selected_context) = matches.value_of("NAME") {
+        if !config.check_context(selected_context) {
+            eprintln!(
+                "error: no context exists with the name: \"{}\"",
+                selected_context
+            );
+            process::exit(1);
+        }
+
+        let new_context = format!("current-context: {}", &selected_context);
+        set_current_context(config_path, config, &new_context);
+
+        println!("Switched to context \"{}\"", selected_context);
+
+        return;
     }
 
     let contexts = config.list_contexts();
@@ -68,12 +83,17 @@ fn main() {
         .next()
         .unwrap_or_else(|| {
             println!("context is not changed");
-            process::exit(1);
+            process::exit(0);
         })
         .get_output_text();
 
     let new_context = format!("current-context: {}", &selected_context);
+    set_current_context(config_path, config, &new_context);
 
+    println!("Switched to context \"{}\"", selected_context);
+}
+
+fn set_current_context<'a>(config_path: &'a PathBuf, config: &'a Config<'a>, new_context: &'a str) {
     config
         .set_current_context(&new_context)
         .unwrap_or_else(|_| {
@@ -85,6 +105,4 @@ fn main() {
         eprintln!("error: cannot save kube config");
         process::exit(1);
     });
-
-    println!("Switched to context \"{}\"", selected_context);
 }

@@ -25,11 +25,21 @@ impl<'a> Config<'a> {
 
     pub fn list_contexts(&self) -> String {
         self.get_contexts()
+            //unwrap
             .unwrap()
             .iter()
             .map(|c| c.to_string())
             .collect::<Vec<String>>()
             .join("\n")
+    }
+
+    pub fn check_context(&self, context: &str) -> bool {
+        let contexts = self
+            .get_contexts()
+            //unwrap
+            .unwrap();
+
+        contexts.iter().find(|&c| *c == context).is_some()
     }
 
     pub fn get_current_context(&self) -> Result<&str, &'static str> {
