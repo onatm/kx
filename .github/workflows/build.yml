@@ -14,4 +14,4 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
       - name: Build
-        run: cargo build
+        run: cargo build --release
