@@ -62,13 +62,14 @@ impl<'a> Config<'a> {
 
         while let Some(line) = iter.next() {
             if parser::match_literal(line, "current-context: ").is_some() {
-                break;
+                contents.push(new_context);
+                contents.swap_remove(index);
+                return Ok(());
             }
             index = index + 1;
         }
 
         contents.push(new_context);
-        contents.swap_remove(index);
 
         Ok(())
     }
