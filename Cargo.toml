@@ -10,6 +10,10 @@ readme = "README.md"
 keywords = ["kubernetes", "kubernetes-context"]
 license = "MIT"
 edition = "2018"
+exclude = [
+    ".github/*",
+    ".vscode/*"
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
