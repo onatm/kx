@@ -14,7 +14,7 @@ fn main() {
         .version(crate_version!())
         .author("onatm - https://github.com/onatm")
         .about("Interactively switch between kubernetes contexts without any external dependencies")
-        .arg(Arg::with_name("NAME").help("Switchs to context <NAME>"))
+        .arg(Arg::with_name("NAME").help("Switches to context <NAME>"))
         .arg(
             Arg::with_name("current")
                 .short("c")
