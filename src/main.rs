@@ -1,7 +1,7 @@
 extern crate clap;
 extern crate dirs;
 
-use clap::{App, Arg};
+use clap::{crate_version, App, Arg};
 use kx::Config;
 use skim::{Skim, SkimOptionsBuilder};
 use std::fs;
@@ -11,7 +11,7 @@ use std::process;
 
 fn main() {
     let matches = App::new("kx")
-        .version("1.0")
+        .version(crate_version!())
         .author("onatm - https://github.com/onatm")
         .about("Interactively switch between kubernetes contexts without any external dependencies")
         .arg(Arg::with_name("NAME").help("Switchs to context <NAME>"))
