@@ -35,9 +35,10 @@ then put the resulting `target/release/kx` executable on your PATH.
 ## Usage
 
 ```md
-  kx                   : list the contexts
-  kx <NAME>            : switch to context <NAME>
-  kx -c, --current     : show the current context name
+kx               : list the contexts
+kx <NAME>        : switch to context <NAME>
+kx -c, --current : show the current context name
+kx -u, --unset   : unset the current context
 ```
 
 ## Todo

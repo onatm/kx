@@ -74,6 +74,22 @@ impl<'a> Config<'a> {
         Ok(())
     }
 
+    pub fn unset_current_context(&'a self) -> Result<(), &'static str> {
+        let mut index = 0;
+        let mut contents = self.contents.borrow_mut();
+        let mut iter = contents.iter();
+
+        while let Some(line) = iter.next() {
+            if parser::match_literal(line, "current-context: ").is_some() {
+                contents.remove(index);
+                return Ok(());
+            }
+            index = index + 1;
+        }
+
+        Ok(())
+    }
+
     fn get_contexts(&self) -> Result<Vec<&str>, &'static str> {
         let mut contexts = Vec::<&str>::new();
         let contents = self.contents.borrow();

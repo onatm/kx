@@ -21,6 +21,12 @@ fn main() {
                 .long("current")
                 .help("Shows the current context"),
         )
+        .arg(
+            Arg::with_name("unset")
+                .short("u")
+                .long("unset")
+                .help("Unsets the current context"),
+        )
         .get_matches();
 
     let home_dir = dirs::home_dir().unwrap_or_else(|| {
@@ -46,6 +52,13 @@ fn main() {
         });
 
         println!("{}", current_context);
+        return;
+    }
+
+    if matches.is_present("unset") {
+        unset_current_context(config_path, config);
+
+        println!("current-context unset");
         return;
     }
 
@@ -100,6 +113,18 @@ fn set_current_context<'a>(config_path: &'a PathBuf, config: &'a Config<'a>, new
             eprintln!("error: cannot set current-context");
             process::exit(1);
         });
+
+    fs::write(config_path, config.get_config()).unwrap_or_else(|_| {
+        eprintln!("error: cannot save kube config");
+        process::exit(1);
+    });
+}
+
+fn unset_current_context<'a>(config_path: &'a PathBuf, config: &'a Config<'a>) {
+    config.unset_current_context().unwrap_or_else(|_| {
+        eprintln!("error: cannot unset current-context");
+        process::exit(1);
+    });
 
     fs::write(config_path, config.get_config()).unwrap_or_else(|_| {
         eprintln!("error: cannot save kube config");
