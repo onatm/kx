@@ -61,7 +61,7 @@ impl<'a> Config<'a> {
         let mut iter = contents.iter();
 
         while let Some(line) = iter.next() {
-            if parser::match_literal(line, "current-context: ").is_some() {
+            if parser::match_literal(line, "current-context:").is_some() {
                 contents.push(new_context);
                 contents.swap_remove(index);
                 return Ok(());
@@ -80,7 +80,7 @@ impl<'a> Config<'a> {
         let mut iter = contents.iter();
 
         while let Some(line) = iter.next() {
-            if parser::match_literal(line, "current-context: ").is_some() {
+            if parser::match_literal(line, "current-context:").is_some() {
                 contents.remove(index);
                 return Ok(());
             }
