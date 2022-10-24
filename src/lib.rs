@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, error::Error};
 
 mod parser;
 
@@ -23,23 +23,19 @@ impl<'a> Config<'a> {
             .join("\n")
     }
 
-    pub fn list_contexts(&self) -> String {
-        self.get_contexts()
-            //unwrap
-            .unwrap()
+    pub fn list_contexts(&self) -> Result<String, Box<dyn Error>> {
+        Ok(self
+            .get_contexts()?
             .iter()
             .map(|c| c.to_string())
             .collect::<Vec<String>>()
-            .join("\n")
+            .join("\n"))
     }
 
-    pub fn check_context(&self, context: &str) -> bool {
-        let contexts = self
-            .get_contexts()
-            //unwrap
-            .unwrap();
+    pub fn check_context(&self, context: &str) -> Result<bool, &'static str> {
+        let contexts = self.get_contexts()?;
 
-        contexts.iter().find(|&c| *c == context).is_some()
+        Ok(contexts.iter().find(|&c| *c == context).is_some())
     }
 
     pub fn get_current_context(&self) -> Result<&str, &'static str> {
@@ -97,8 +93,9 @@ impl<'a> Config<'a> {
 
         while let Some(line) = input.next() {
             if parser::match_literal(line, "contexts:").is_some() {
-                // unwrap
-                while parser::is_in_mapping(input.peek().unwrap()).is_ok() {
+                while parser::is_in_mapping(input.peek().ok_or("Reached the end of contexts.")?)
+                    .is_ok()
+                {
                     if let Some(line) = input.next() {
                         if let Some(name) = parser::match_literal(line, "  name: ") {
                             contexts.push(name);

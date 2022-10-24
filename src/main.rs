@@ -63,13 +63,21 @@ fn main() {
     }
 
     if let Some(selected_context) = matches.value_of("NAME") {
-        if !config.check_context(selected_context) {
-            eprintln!(
-                "error: no context exists with the name: \"{}\"",
-                selected_context
-            );
-            process::exit(1);
-        }
+        match config.check_context(selected_context) {
+            Ok(res) => {
+                if !res {
+                    eprintln!(
+                        "error: no context exists with the name: \"{}\"",
+                        selected_context
+                    );
+                    process::exit(1);
+                }
+            }
+            Err(e) => {
+                eprintln!("error: {}", e);
+                process::exit(1);
+            }
+        };
 
         let new_context = format!("current-context: {}", &selected_context);
         set_current_context(config_path, config, &new_context);
@@ -79,13 +87,20 @@ fn main() {
         return;
     }
 
-    let contexts = config.list_contexts();
+    let contexts = config.list_contexts().unwrap_or_else(|e| {
+        eprintln!("error: {}", e);
+        process::exit(1);
+    });
 
     let options = SkimOptionsBuilder::default()
         .height(Some("100%"))
         .multi(true)
         .build()
-        .unwrap();
+        .unwrap_or_else(|e| {
+            eprintln!("error: cannot show contexts");
+            eprintln!("{e}");
+            process::exit(1);
+        });
 
     let selected_items = Skim::run_with(&options, Some(Box::new(Cursor::new(contexts))))
         .map(|out| out.selected_items)
