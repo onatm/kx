@@ -9,7 +9,7 @@ repository = "https://github.com/onatm/kx"
 readme = "README.md"
 keywords = ["kubernetes", "kubernetes-context"]
 license = "MIT"
-edition = "2018"
+edition = "2021"
 exclude = [
     ".github/*",
     ".vscode/*"
