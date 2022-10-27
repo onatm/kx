@@ -1,9 +1,6 @@
-extern crate clap;
-extern crate dirs;
-
 use clap::{crate_version, App, Arg};
 use kx::Config;
-use skim::{Skim, SkimOptionsBuilder};
+use skim::prelude::*;
 use std::fs;
 use std::io::Cursor;
 use std::path::PathBuf;
@@ -102,18 +99,25 @@ fn main() {
             process::exit(1);
         });
 
-    let selected_items = Skim::run_with(&options, Some(Box::new(Cursor::new(contexts))))
-        .map(|out| out.selected_items)
-        .unwrap_or_else(|| Vec::new());
+    let item_reader = SkimItemReader::default();
+    let items = item_reader.of_bufread(Cursor::new(contexts));
 
-    let selected_context = selected_items
+    let output = Skim::run_with(&options, Some(items)).unwrap();
+
+    if output.is_abort {
+        println!("context is not changed");
+        process::exit(0);
+    }
+
+    let selected_context = output
+        .selected_items
         .iter()
         .next()
         .unwrap_or_else(|| {
-            println!("context is not changed");
-            process::exit(0);
+            eprintln!("error: cannot pick context");
+            process::exit(1);
         })
-        .get_output_text();
+        .output();
 
     let new_context = format!("current-context: {}", &selected_context);
     set_current_context(config_path, config, &new_context);
