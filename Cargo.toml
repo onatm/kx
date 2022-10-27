@@ -19,5 +19,5 @@ exclude = [
 
 [dependencies]
 clap = "2.33.0"
-dirs = "2.0"
+dirs = "4.0"
 skim = "0.9"
