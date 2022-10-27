@@ -1,4 +1,4 @@
-use clap::{crate_version, App, Arg};
+use clap::Parser;
 use kx::Config;
 use skim::prelude::*;
 use std::fs;
@@ -6,25 +6,22 @@ use std::io::Cursor;
 use std::path::PathBuf;
 use std::process;
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Switches to context <NAME>
+    #[arg()]
+    name: Option<String>,
+    /// Shows the current context
+    #[arg(short = 'c', long = "current")]
+    current: bool,
+    /// Unsets the current context
+    #[arg(short = 'u', long = "unset")]
+    unset: bool,
+}
+
 fn main() {
-    let matches = App::new("kx")
-        .version(crate_version!())
-        .author("onatm - https://github.com/onatm")
-        .about("Interactively switch between kubernetes contexts without any external dependencies")
-        .arg(Arg::with_name("NAME").help("Switches to context <NAME>"))
-        .arg(
-            Arg::with_name("current")
-                .short("c")
-                .long("current")
-                .help("Shows the current context"),
-        )
-        .arg(
-            Arg::with_name("unset")
-                .short("u")
-                .long("unset")
-                .help("Unsets the current context"),
-        )
-        .get_matches();
+    let args = Args::parse();
 
     let home_dir = dirs::home_dir().unwrap_or_else(|| {
         eprintln!("error: cannot find HOME directory");
@@ -42,7 +39,7 @@ fn main() {
 
     let config = &mut Config::load(contents);
 
-    if matches.is_present("current") {
+    if args.current {
         let current_context = config.get_current_context().unwrap_or_else(|err| {
             eprintln!("error: {}", err);
             process::exit(1);
@@ -52,15 +49,15 @@ fn main() {
         return;
     }
 
-    if matches.is_present("unset") {
+    if args.unset {
         unset_current_context(config_path, config);
 
         println!("current-context unset");
         return;
     }
 
-    if let Some(selected_context) = matches.value_of("NAME") {
-        match config.check_context(selected_context) {
+    if let Some(selected_context) = args.name {
+        match config.check_context(&selected_context) {
             Ok(res) => {
                 if !res {
                     eprintln!(
