@@ -20,4 +20,4 @@ exclude = [
 [dependencies]
 clap = { version = "4.0", features = ["derive"] }
 dirs = "4.0"
-skim = "0.9"
+skim = "0.10"
