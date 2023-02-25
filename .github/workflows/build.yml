@@ -11,7 +11,9 @@ jobs:
         # os: [ubuntu-latest, windows-latest, macOS-latest]
 
     steps:
-      - name: Checkout sources
+      - name: checkout
         uses: actions/checkout@v2
-      - name: Build
+      - name: lint deps
+        uses: EmbarkStudios/cargo-deny-action@v1
+      - name: build
         run: cargo build --release
