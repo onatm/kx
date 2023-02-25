@@ -3,13 +3,38 @@ name: Build
 on: [push, pull_request]
 
 jobs:
-  build:
+  lint:
+    name: lint
     runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: "clippy, rustfmt"
+      - uses: Swatinem/rust-cache@v2
+
+      - name: rustfmt
+        run: cargo fmt -- --check --color always
+
+      - run: cargo fetch
+      - name: cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  deps:
+    name: lint deps
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: EmbarkStudios/cargo-deny-action@v1
+
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: lint deps
-        uses: EmbarkStudios/cargo-deny-action@v1
+      - uses: actions/checkout@v2
+      - uses: Swatinem/rust-cache@v2
       - name: build
         run: cargo build --release
