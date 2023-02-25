@@ -108,8 +108,7 @@ fn main() {
 
     let selected_context = output
         .selected_items
-        .iter()
-        .next()
+        .first()
         .unwrap_or_else(|| {
             eprintln!("error: cannot pick context");
             process::exit(1);
@@ -123,12 +122,10 @@ fn main() {
 }
 
 fn set_current_context<'a>(config_path: &'a PathBuf, config: &'a Config<'a>, new_context: &'a str) {
-    config
-        .set_current_context(&new_context)
-        .unwrap_or_else(|_| {
-            eprintln!("error: cannot set current-context");
-            process::exit(1);
-        });
+    config.set_current_context(new_context).unwrap_or_else(|_| {
+        eprintln!("error: cannot set current-context");
+        process::exit(1);
+    });
 
     fs::write(config_path, config.get_config()).unwrap_or_else(|_| {
         eprintln!("error: cannot save kube config");

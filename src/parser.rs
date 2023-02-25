@@ -8,7 +8,7 @@ pub fn match_literal<'a>(input: &'a str, expected: &'static str) -> Option<&'a s
 pub fn is_in_mapping(input: &str) -> Result<(), &str> {
     match &input.chars().next() {
         Some(first_char) => {
-            return if !first_char.is_alphabetic() {
+            if !first_char.is_alphabetic() {
                 Ok(())
             } else {
                 Err(input)

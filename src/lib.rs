@@ -35,14 +35,14 @@ impl<'a> Config<'a> {
     pub fn check_context(&self, context: &str) -> Result<bool, &'static str> {
         let contexts = self.get_contexts()?;
 
-        Ok(contexts.iter().find(|&c| *c == context).is_some())
+        Ok(contexts.iter().any(|c| *c == context))
     }
 
     pub fn get_current_context(&self) -> Result<&str, &'static str> {
         let contents = self.contents.borrow();
-        let mut iter = contents.iter();
+        let iter = contents.iter();
 
-        while let Some(line) = iter.next() {
+        for line in iter {
             if let Some(current_context) = parser::match_literal(line, "current-context: ") {
                 return Ok(current_context);
             }
@@ -52,17 +52,15 @@ impl<'a> Config<'a> {
     }
 
     pub fn set_current_context(&'a self, new_context: &'a str) -> Result<(), &'static str> {
-        let mut index = 0;
         let mut contents = self.contents.borrow_mut();
-        let mut iter = contents.iter();
+        let iter = contents.iter();
 
-        while let Some(line) = iter.next() {
+        for (index, line) in iter.enumerate() {
             if parser::match_literal(line, "current-context:").is_some() {
                 contents.push(new_context);
                 contents.swap_remove(index);
                 return Ok(());
             }
-            index = index + 1;
         }
 
         contents.push(new_context);
@@ -71,16 +69,14 @@ impl<'a> Config<'a> {
     }
 
     pub fn unset_current_context(&'a self) -> Result<(), &'static str> {
-        let mut index = 0;
         let mut contents = self.contents.borrow_mut();
-        let mut iter = contents.iter();
+        let iter = contents.iter();
 
-        while let Some(line) = iter.next() {
+        for (index, line) in iter.enumerate() {
             if parser::match_literal(line, "current-context:").is_some() {
                 contents.remove(index);
                 return Ok(());
             }
-            index = index + 1;
         }
 
         Ok(())
@@ -107,7 +103,7 @@ impl<'a> Config<'a> {
             }
         }
 
-        if contexts.len() == 0 {
+        if contexts.is_empty() {
             return Err("Cannot get contexts!");
         }
 
