@@ -1,0 +1,26 @@
+[advisories]
+vulnerability = "deny"
+unmaintained = "warn"
+yanked = "warn"
+notice = "warn"
+ignore = [
+    "RUSTSEC-2020-0071",
+    "RUSTSEC-2021-0145",
+]
+
+[licenses]
+unlicensed = "deny"
+allow = ["Apache-2.0", "MIT", "MPL-2.0", "Unicode-DFS-2016"]
+deny = []
+copyleft = "deny"
+default = "deny"
+confidence-threshold = 0.8
+exceptions = []
+
+[bans]
+multiple-versions = "allow"
+deny = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
